@@ -2,5 +2,5 @@ allow hal_audio_default vendor_hal_miscta_default:binder call;
 
 allow hal_audio_default vendor_hal_miscta_hwservice:hwservice_manager find;
 
-get_prop(hal_audio_default, bluetooth_prop)
+# get_prop(hal_audio_default, bluetooth_prop)
 get_prop(hal_audio_default, vendor_pd_locater_dbg_prop)

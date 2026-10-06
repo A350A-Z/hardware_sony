@@ -14,32 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * Conversion Note(2026.8.28):
+ * This implementation has been converted from HIDL (V1_0) to AIDL (NDK).
+ * Key differences:
+ * - All methods now return ndk::ScopedAStatus and use pointers for output.
+ * - Parameter types changed: uint32_t -> int32_t.
+ */
 #pragma once
 
-#include <hidl/MQDescriptor.h>
-#include <hidl/Status.h>
-#include <vendor/lineage/powershare/1.0/IPowerShare.h>
+#include <aidl/vendor/lineage/powershare/BnPowerShare.h>
 
+namespace aidl {
 namespace vendor {
 namespace lineage {
 namespace powershare {
-namespace V1_0 {
-namespace implementation {
 
-using ::android::hardware::Return;
-using ::android::hardware::Void;
-using ::android::sp;
-
-class PowerShare : public IPowerShare {
+class PowerShare : public BnPowerShare {
   public:
-    Return<bool> isEnabled() override;
-    Return<bool> setEnabled(bool enable) override;
-    Return<uint32_t> getMinBattery() override;
-    Return<uint32_t> setMinBattery(uint32_t minBattery) override;
+    ndk::ScopedAStatus isEnabled(bool* _aidl_return) override;
+    ndk::ScopedAStatus setEnabled(bool enable) override;
+    ndk::ScopedAStatus getMinBattery(int32_t* _aidl_return) override;
+    ndk::ScopedAStatus setMinBattery(int32_t minBattery) override;
 };
 
-}  // namespace implementation
-}  // namespace V1_0
 }  // namespace powershare
 }  // namespace lineage
 }  // namespace vendor
+}  // namespace aidl

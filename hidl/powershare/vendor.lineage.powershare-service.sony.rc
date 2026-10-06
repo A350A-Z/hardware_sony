@@ -1,0 +1,5 @@
+# Migrated from HIDL to AIDL , renamed service and binary.(2026.8.28)
+service vendor.powershare-hal /vendor/bin/hw/vendor.lineage.powershare-service.sony
+    class hal
+    user system
+    group system

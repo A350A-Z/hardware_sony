@@ -7,7 +7,7 @@ unix_socket_connect(hal_vibrator_default, tad, tad)
 allow hal_vibrator_default vendor_hal_miscta_default:binder call;
 allow hal_vibrator_default vendor_hal_miscta_hwservice:hwservice_manager find;
 
-allow hal_vibrator_default default_prop:file { open getattr map read };
+# allow hal_vibrator_default default_prop:file { open getattr map read };
 
 allow hal_vibrator_default proc_asound:dir r_dir_perms;
 allow hal_vibrator_default sysfs_leds:dir search;

@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 //
+//HIDL to AIDL(2026.8.28)
 
 soong_config_module_type {
     name: "sony_powershare_hal_cc_defaults",
@@ -22,39 +23,31 @@ sony_powershare_hal_cc_defaults {
     },
 }
 
-filegroup {
-    name: "vendor.lineage.powershare@1.0-sony-ps",
-    srcs: ["PowerShare.cpp"],
-}
-
 cc_library_headers {
-    name: "vendor.lineage.powershare@1.0-sony-headers",
+    name: "sony_powershare_hal_headers",
     vendor_available: true,
     export_include_dirs: ["include"],
 }
 
 cc_binary {
-    name: "vendor.lineage.powershare@1.0-service.sony",
+    name: "vendor.lineage.powershare-service.sony",
     defaults: [
-        "hidl_defaults",
         "sony_powershare_hal_defaults",
     ],
-    init_rc: ["vendor.lineage.powershare@1.0-service.sony.rc"],
-    vintf_fragments: ["vendor.lineage.powershare@1.0-service.sony.xml"],
+    init_rc: ["vendor.lineage.powershare-service.sony.rc"],
+    vintf_fragments: ["vendor.lineage.powershare-service.sony.xml"],
     relative_install_path: "hw",
     srcs: [
-        ":vendor.lineage.powershare@1.0-sony-ps",
+        "PowerShare.cpp",
         "service.cpp",
     ],
     shared_libs: [
         "libbase",
-        "libbinder",
-        "libhidlbase",
-        "libutils",
-        "vendor.lineage.powershare@1.0",
+        "libbinder_ndk",
+        "vendor.lineage.powershare-V1-ndk",
     ],
     header_libs: [
-        "vendor.lineage.powershare@1.0-sony-headers",
+        "sony_powershare_hal_headers",
     ],
     proprietary: true,
 }

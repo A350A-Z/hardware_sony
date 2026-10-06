@@ -15,23 +15,65 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "vendor.lineage.powershare@1.0-service.sony"
+/*
+ * Conversion Note (2026-08-28):
+ * This implementation has been migrated from HIDL (vendor.lineage.powershare@1.0)
+ * to AIDL (aidl/vendor/lineage/powershare) for Android 14+ compatibility.
+ *
+ * Key changes:
+ * - Namespace: vendor::lineage::powershare::V1_0::implementation
+ *              -> aidl::vendor::lineage::powershare
+ * - Method signatures: Return<T> -> ndk::ScopedAStatus with output pointers
+ * - Data types: uint32_t -> int32_t for minBattery
+ * - Removed unused include <android-base/strings.h>
+ * - Adjusted LOG_TAG to reflect new service naming
+ */
+
+
+#define LOG_TAG "vendor.lineage.powershare-service.sony"
 
 #include <android-base/logging.h>
-#include <android-base/strings.h>
 #include <fstream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cerrno>
+#include <fstream>
+
 #include <powershare/sony/PowerShare.h>
 
+namespace aidl {
 namespace vendor {
 namespace lineage {
 namespace powershare {
-namespace V1_0 {
-namespace implementation {
 
-template <typename T>
-static void set(const std::string& path, const T& value) {
-    std::ofstream file(path);
-    file << value;
+static bool set(const std::string& path, const std::string& value) {
+    int fd = open(path.c_str(), O_WRONLY);
+    if (fd < 0) {
+        LOG(ERROR) << "open failed: " << errno;
+        return false;
+    }
+
+    ssize_t ret = write(fd, value.c_str(), value.size());
+    if (ret < 0) {
+        int write_errno = errno;
+        close(fd);
+        LOG(ERROR) << "write failed: " << write_errno;
+        return false;
+    }
+
+    if (static_cast<size_t>(ret) != value.size()) {
+        close(fd);
+        LOG(ERROR) << "short write: " << ret << "/" << value.size();
+        return false;
+    }
+
+    if (close(fd) < 0) {
+        int close_errno = errno;
+        LOG(WARNING) << "close returned error: " << close_errno;
+        return false;
+    }
+
+    return true;
 }
 
 template <typename T>
@@ -43,27 +85,31 @@ static T get(const std::string& path, const T& def) {
     return file.fail() ? def : result;
 }
 
-Return<bool> PowerShare::isEnabled() {
+ndk::ScopedAStatus PowerShare::isEnabled(bool* _aidl_return) {
     const auto value = get<std::string>(WIRELESS_TX_ENABLE_PATH, "0");
-    return !(value == "disable" || value == "0");
+
+    *_aidl_return = !(value == "disable" || value == "0");
+
+    return ndk::ScopedAStatus::ok();
 }
 
-Return<bool> PowerShare::setEnabled(bool enable) {
-    set(WIRELESS_TX_ENABLE_PATH, enable ? 1 : 0);
+ndk::ScopedAStatus PowerShare::setEnabled(bool enable) {
+    set(WIRELESS_TX_ENABLE_PATH, enable ? "1" : "0");
 
-    return isEnabled();
+    return ndk::ScopedAStatus::ok();
 }
 
-Return<uint32_t> PowerShare::getMinBattery() {
-    return 0;
+ndk::ScopedAStatus PowerShare::getMinBattery(int32_t* _aidl_return) {
+    *_aidl_return = 0;
+
+    return ndk::ScopedAStatus::ok();
 }
 
-Return<uint32_t> PowerShare::setMinBattery(uint32_t /*minBattery*/) {
-    return getMinBattery();
+ndk::ScopedAStatus PowerShare::setMinBattery(int32_t /*minBattery*/) {
+    return ndk::ScopedAStatus::ok();
 }
 
-}  // namespace implementation
-}  // namespace V1_0
 }  // namespace powershare
 }  // namespace lineage
 }  // namespace vendor
+}  // namespace aidl

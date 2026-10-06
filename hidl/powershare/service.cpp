@@ -15,46 +15,54 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "vendor.lineage.powershare@1.0-service.sony"
+/*
+ * Migration Note (2026-08-28):
+ * This service has been converted from HIDL (vendor.lineage.powershare@1.0)
+ * to AIDL (aidl/vendor/lineage/powershare) for Android 14+ compatibility.
+ *
+ * Key changes:
+ * - Removed HIDL dependencies: <hidl/HidlTransportSupport.h>, <binder/ProcessState.h>
+ * - Replaced with NDK Binder: <android/binder_manager.h>, <android/binder_process.h>
+ * - Thread pool: configureRpcThreadpool(1, true) -> ABinderProcess_setThreadPoolMaxThreadCount(1)
+ * - Service registration: registerAsService() -> AServiceManager_addService()
+ * - Service object: sp<IPowerShare> -> ndk::SharedRefBase::make<PowerShare>()
+ * - Added explicit instance name: descriptor + "/default"
+ * - Removed vndbinder driver init (now uses default binder)
+ * - Simplified shutdown handling (no goto, return 1 on failure)
+ */
+
+#define LOG_TAG "vendor.lineage.powershare-service.sony"
 
 #include <android-base/logging.h>
-#include <binder/ProcessState.h>
-#include <hidl/HidlTransportSupport.h>
+#include <android/binder_manager.h>
+#include <android/binder_process.h>
+
 #include <powershare/sony/PowerShare.h>
 
-using ::android::OK;
-using ::android::sp;
-using ::android::status_t;
-using ::android::hardware::configureRpcThreadpool;
-using ::android::hardware::joinRpcThreadpool;
-
-using ::vendor::lineage::powershare::V1_0::IPowerShare;
-using ::vendor::lineage::powershare::V1_0::implementation::PowerShare;
+using aidl::vendor::lineage::powershare::PowerShare;
 
 int main() {
-    status_t status = OK;
+    ABinderProcess_setThreadPoolMaxThreadCount(1);
 
-    android::ProcessState::initWithDriver("/dev/vndbinder");
+    auto ps = ndk::SharedRefBase::make<PowerShare>();
+
+    const std::string instance =
+            std::string() + PowerShare::descriptor + "/default";
 
     LOG(INFO) << "PowerShare HAL service is starting.";
 
-    sp<IPowerShare> ps = new PowerShare();
+    binder_status_t status =
+            AServiceManager_addService(ps->asBinder().get(), instance.c_str());
 
-    configureRpcThreadpool(1, true /*callerWillJoin*/);
-
-    status = ps->registerAsService();
-    if (status != OK) {
-        LOG(ERROR) << "Could not register service for PowerShare HAL service ("
-                   << status << ")";
-        goto shutdown;
+    if (status != STATUS_OK) {
+        LOG(ERROR) << "Could not register PowerShare HAL service: "
+                   << status;
+        return 1;
     }
 
     LOG(INFO) << "PowerShare HAL service is ready.";
-    joinRpcThreadpool();
-    // Should not pass this line
 
-shutdown:
-    // In normal operation, we don't expect the thread pool to shutdown
-    LOG(ERROR) << "PowerShare HAL service is shutting down.";
-    return 1;
+    ABinderProcess_joinThreadPool();
+
+    return 0;
 }
